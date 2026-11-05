@@ -1,4 +1,4 @@
-# myHealthInsure Hybrid GraphRAG + VectorRAG Pipeline
+# HealthInsure Hybrid GraphRAG + VectorRAG Pipeline
 
 An enterprise-grade, production-quality health insurance care navigation microservice. This application leverages **LangGraph** to coordinate deterministic traversals across a **Neo4j FHIR Ontology Graph** with automatic fallbacks to a **ChromaDB Vector Store** when parsing unstructured 2026 Summary of Benefits and Coverage (SBC) PDFs.
 
