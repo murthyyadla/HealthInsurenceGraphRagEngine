@@ -1,49 +1,51 @@
 import os
+from dotenv import load_dotenv
 from neo4j import GraphDatabase
 
-NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+# Force local environment variable lookups
+load_dotenv()
+
+# Read the connection configuration variables natively
+NEO4J_URI = "bolt://127.0.0.1:7687"  # Use localhost when running natively outside Docker
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
-NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "neo4j")
 
-FHIR_ONTOLOGY_DATA = {
-    "nodes": [
-        {"label": "FHIR_Condition", "props": {"fhir_id": "c-101", "icd10_code": "M23.2", "display_name": "Lateral Meniscus Tear"}},
-        {"label": "FHIR_Condition", "props": {"fhir_id": "c-102", "icd10_code": "M54.5", "display_name": "Lumbar Radiculopathy"}},
-        {"label": "FHIR_Procedure", "props": {"fhir_id": "p-201", "cpt_code": "73721", "display_name": "MRI Lower Extremity Joint"}},
-        {"label": "FHIR_Procedure", "props": {"fhir_id": "p-202", "cpt_code": "72148", "display_name": "MRI Lumbar Spine"}},
-        {"label": "HL7_CoverageRule", "props": {"rule_id": "r-301", "requirement": "Prior Authorization Required", "copay": 250.00}},
-        {"label": "HL7_CoverageRule", "props": {"rule_id": "r-302", "requirement": "6 Weeks Physical Therapy Prerequisite Required", "copay": 40.00}}
-    ],
-    "relationships": [
-        {"source_id": "c-101", "target_id": "p-201", "type": "INDICATES_PROCEDURE"},
-        {"source_id": "c-102", "target_id": "p-202", "type": "INDICATES_PROCEDURE"},
-        {"source_id": "p-201", "target_id": "r-301", "type": "GOVERNED_BY_RULE"},
-        {"source_id": "p-202", "target_id": "r-302", "type": "GOVERNED_BY_RULE"}
-    ]
-}
-
-def seed_fhir_graph():
-    driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
-    with driver.session() as session:
-        print("🧹 Flushing graph database topology...")
-        session.run("MATCH (n) DETACH DELETE n")
-        
-        print("🧬 Injecting standardized FHIR & HL7 ontology nodes...")
-        for node in FHIR_ONTOLOGY_DATA["nodes"]:
-            session.run(f"CREATE (n:{node['label']}) SET n = $props", props=node["props"])
+def build_myhealthinsure_ontology():
+    print(f"📡 Connecting to Neo4j instance at {NEO4J_URI}...")
+    try:
+        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        with driver.session() as session:
+            # Wipe out old corrupted elements to start fresh
+            session.run("MATCH (n) DETACH DELETE n")
             
-        print("🕸️ Wiring standardized semantic relation paths...")
-        fallback_cypher = """
-        MATCH (s), (t) 
-        WHERE (s.fhir_id = $source_id) AND (t.fhir_id = $target_id OR t.rule_id = $target_id)
-        FOREACH (_ IN CASE WHEN $type = 'INDICATES_PROCEDURE' THEN ELSE [] END | CREATE (s)-[:INDICATES_PROCEDURE]->(t))
-        FOREACH (_ IN CASE WHEN $type = 'GOVERNED_BY_RULE' THEN ELSE [] END | CREATE (s)-[:GOVERNED_BY_RULE]->(t))
-        """
-        for rel in FHIR_ONTOLOGY_DATA["relationships"]:
-            session.run(fallback_cypher, source_id=rel["source_id"], target_id=rel["target_id"], type=rel["type"])
-                
-    driver.close()
-    print("✨ myHealthInsure Graph Ontology Ingestion Complete!")
+            print("🏗️ Creating structural health insurance ontology nodes...")
+            # Seed standard medical conditions
+            session.run("CREATE (:FHIR_Condition {fhir_id: 'C001', icd10_code: 'M23.22', display_name: 'Lateral Meniscus Tear'})")
+            session.run("CREATE (:FHIR_Condition {fhir_id: 'C002', icd10_code: 'M23.23', display_name: 'Medial Meniscus Tear'})")
+            
+            # Seed corresponding procedures
+            session.run("CREATE (:FHIR_Procedure {fhir_id: 'P001', cpt_code: '29881', display_name: 'Arthroscopic Meniscectomy'})")
+            session.run("CREATE (:FHIR_Procedure {fhir_id: 'P002', cpt_code: '73721', display_name: 'Knee MRI Scan'})")
+            
+            # Seed corporate coverage rules
+            session.run("CREATE (:HL7_CoverageRule {rule_id: 'R001', requirement: 'Prior Authorization Required', copay: '$250', co_insurance: '20%'})")
+            
+            print("🔗 Constructing relational architecture paths...")
+            # Bind condition to procedure
+            session.run("""
+                MATCH (c:FHIR_Condition {fhir_id: 'C001'}), (p:FHIR_Procedure {fhir_id: 'P002'})
+                CREATE (c)-[:INDICATES_PROCEDURE]->(p)
+            """)
+            # Bind procedure to standard coverage rule
+            session.run("""
+                MATCH (p:FHIR_Procedure {fhir_id: 'P002'}), (r:HL7_CoverageRule {rule_id: 'R001'})
+                CREATE (p)-[:GOVERNED_BY_RULE]->(r)
+            """)
+            
+        driver.close()
+        print("✨ myHealthInsure Graph Ontology Ingestion Complete!")
+    except Exception as e:
+        print(f"❌ Failed to seed graph data database: {str(e)}")
 
 if __name__ == "__main__":
-    seed_fhir_graph()
+    build_myhealthinsure_ontology()
