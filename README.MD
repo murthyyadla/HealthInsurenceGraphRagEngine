@@ -1,4 +1,4 @@
-# HealthInsurenceBenefitsAgent: Forward Deployment Engineering & Infrastructure Integration
+# HealthInsure Hybrid GraphRAG + VectorRAG Pipeline
 
 HealthInsurenceBenefitsAgent is a containerized full-stack platform designed to parse complex, unstructured health insurance policy data and model it into an enterprise-ready Neo4j knowledge graph. This repository serves as a blueprint for Forward Deployment Engineers (FDEs) managing rapid, reliable client-side rollouts—featuring hardened container networking, automated environment initialization, and seamless cross-service integrations.
 
