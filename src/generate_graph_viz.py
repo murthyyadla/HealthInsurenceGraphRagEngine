@@ -1,4 +1,11 @@
 
+import sys
+import os
+
+# Dynamically append the project root directory to the python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Now your original import will work perfectly
 from src.pipeline import myhealthinsure_pipeline
 
 def export_pipeline_visualization():

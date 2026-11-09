@@ -58,7 +58,7 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>💙 myHealthInsure Portal</h1>
+        <h1>💙 Benefits Agent</h1>
         <p>Enterprise Hybrid GraphRAG Intelligent Gateway</p>
       </header>
 

@@ -8,3 +8,7 @@ neo4j>=5.18.0
 chromadb>=0.4.24
 pypdf>=4.0.0
 requests>=2.31.0
+langchain-google-genai>=4.4.3
+langchain-chroma>=0.1.4
+langchain-huggingface>=0.1.0
+sentence-transformers>=3.0.0
